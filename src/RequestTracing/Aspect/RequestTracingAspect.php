@@ -65,7 +65,17 @@ class RequestTracingAspect extends OrderAspect
      */
     protected function aroundTcpReceive(MethodInvocation $invocation)
     {
-
+        $tracer = getDeepContextValueByClassName(Tracer::class);
+        $clientData = getDeepContextValueByClassName(ClientData::class);
+        $span = $tracer->startSpan($clientData->getRequest()->getMethod());
+        $span->setTag(SPAN_KIND, 'SERVER');
+        $span->setTag("method", "tcp");
+        $span->setTag("path", $clientData->getPath());
+        $span->setTag("component", "ESD Server");
+        defer(function () use ($span) {
+            $span->finish();
+        });
+        $invocation->proceed();
     }
 
     /**
@@ -77,7 +87,17 @@ class RequestTracingAspect extends OrderAspect
      */
     protected function aroundWsMessage(MethodInvocation $invocation)
     {
-
+        $tracer = getDeepContextValueByClassName(Tracer::class);
+        $clientData = getDeepContextValueByClassName(ClientData::class);
+        $span = $tracer->startSpan($clientData->getRequest()->getMethod());
+        $span->setTag(SPAN_KIND, 'SERVER');
+        $span->setTag("method", "ws");
+        $span->setTag("path", $clientData->getPath());
+        $span->setTag("component", "ESD Server");
+        defer(function () use ($span) {
+            $span->finish();
+        });
+        $invocation->proceed();
     }
 
     /**
@@ -89,6 +109,16 @@ class RequestTracingAspect extends OrderAspect
      */
     protected function aroundUdpPacket(MethodInvocation $invocation)
     {
-
+        $tracer = getDeepContextValueByClassName(Tracer::class);
+        $clientData = getDeepContextValueByClassName(ClientData::class);
+        $span = $tracer->startSpan($clientData->getRequest()->getMethod());
+        $span->setTag(SPAN_KIND, 'SERVER');
+        $span->setTag("method", "udp");
+        $span->setTag("path", $clientData->getPath());
+        $span->setTag("component", "ESD Server");
+        defer(function () use ($span) {
+            $span->finish();
+        });
+        $invocation->proceed();
     }
 }

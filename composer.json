@@ -13,7 +13,7 @@
   "autoload": {
     "psr-4": {
       "ESD\\Plugins\\": "src/",
-      "ESD\\Plugins\\Tracing\\Examples\\": "examples/"
+      "ESD\\Plugins\\Tracing\\Examples\\": "examples/src"
     }
   },
   "authors": [

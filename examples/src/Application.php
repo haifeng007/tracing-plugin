@@ -13,9 +13,9 @@ use ESD\Plugins\RequestTracing\RequestTracingPlugin;
 
 class Application extends GoApplication
 {
-    public function __construct()
+    public function configure()
     {
-        parent::__construct();
         $this->addPlug(new RequestTracingPlugin());
+        parent::configure();
     }
 }

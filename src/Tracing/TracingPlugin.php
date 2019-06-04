@@ -88,7 +88,7 @@ class TracingPlugin extends AbstractPlugin
      */
     public function beforeServerStart(Context $context)
     {
-
+       return;
     }
 
     /**
