@@ -1,0 +1,28 @@
+esd:
+  process:
+    task-1:
+      class_name: ESD\Go\GoProcess
+      group_name: TaskGroup
+
+reload:
+  enable: false
+
+aop:
+  include_paths:
+    - /mnt/c/Users/administrato/PhpstormProjects/tracing-plugin/examples/src
+
+scan:
+  include_paths:
+    - /mnt/c/Users/administrato/PhpstormProjects/tracing-plugin/examples/src
+
+mysql:
+  default:
+    host: 'mysql-aliyun.dev.svc.cluster.local'
+    username: 'huiyi'
+    password: 'huiyi@123'
+    db: 'huiyi_analysis'
+    prefix: "t_"
+
+redis:
+  default:
+    host: 'redis-master.dev.svc.cluster.local'

@@ -1,0 +1,34 @@
+{
+  "minimum-stability": "beta",
+  "require": {
+    "esd/esd-core": "~0.1",
+    "esd/aop-plugin": "~0.1",
+    "esd/saber-plugin": "~0.1",
+    "esd/pack-plugin": "~0.1",
+    "jcchavezs/zipkin-opentracing": "^0.1.2"
+  },
+  "require-dev": {
+    "esd/esd-server": "~0.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "ESD\\Plugins\\": "src/",
+      "ESD\\Plugins\\Tracing\\Examples\\": "examples/"
+    }
+  },
+  "authors": [
+    {
+      "name": "tmtbe",
+      "email": "896369042@qq.com",
+      "homepage": "https://github.com/tmtbe"
+    }
+  ],
+  "name": "esd/tracing-plugin",
+  "type": "library",
+  "keywords": [
+    "server",
+    "swoole"
+  ],
+  "description": "tracing-plugin",
+  "license": "MIT"
+}
