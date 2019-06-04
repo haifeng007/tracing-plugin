@@ -8,7 +8,6 @@
 
 namespace ESD\Plugins\DBTracing\Aspect;
 
-use ESD\Core\DB\DBInterface;
 use ESD\Plugins\Aop\OrderAspect;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
@@ -29,31 +28,31 @@ class DBTracingAspect extends OrderAspect
      * around onUdpPacket
      *
      * @param MethodInvocation $invocation Invocation
-     * @Around("within(ESD\Core\DB\DBInterface+) && execution(public **->execute(*))")
+     * @Around("within(ESD\Psr\DB\DBInterface+) && execution(public **->execute(*))")
+     * @return mixed
      * @throws \Throwable
      */
     protected function aroundDBExecute(MethodInvocation $invocation)
     {
         $db = $invocation->getThis();
-        list($query, $call) = $invocation->getArguments();
         $tracer = getDeepContextValueByClassName(Tracer::class);
         $requestSpan = getDeepContextValue("requestSpan");
-        if ($db instanceof DBInterface) {
-            if ($requestSpan != null) {
-                $span = $tracer->startSpan("Execute", [
-                    'child_of' => $requestSpan
-                ]);
-            } else {
-                $span = $tracer->startSpan("Execute");
-            }
-            $span->setTag(SPAN_KIND, 'Client');
-            $span->setTag("db.statement", $query);
-            $span->setTag("db.type", $db->getType());
-            $span->setTag("component", "ESD Server");
-            defer(function () use ($span) {
-                $span->finish();
-            });
+        if ($requestSpan != null) {
+            $span = $tracer->startSpan("Execute", [
+                'child_of' => $requestSpan
+            ]);
+        } else {
+            $span = $tracer->startSpan("Execute");
         }
-        $invocation->proceed();
+        $span->setTag(SPAN_KIND, 'Client');
+
+        $span->setTag("db.type", $db->getType());
+        $span->setTag("component", "ESD DB");
+        defer(function () use ($span) {
+            $span->finish();
+        });
+        $result = $invocation->proceed();
+        $span->setTag("db.statement", $db->getLastQuery());
+        return $result;
     }
 }
