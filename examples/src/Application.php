@@ -9,6 +9,7 @@
 namespace ESD\Plugins\Tracing\Examples;
 
 use ESD\Go\GoApplication;
+use ESD\Plugins\DBTracing\DBTracingPlugin;
 use ESD\Plugins\RequestTracing\RequestTracingPlugin;
 
 class Application extends GoApplication
@@ -16,6 +17,7 @@ class Application extends GoApplication
     public function configure()
     {
         $this->addPlug(new RequestTracingPlugin());
+        $this->addPlug(new DBTracingPlugin());
         parent::configure();
     }
 }

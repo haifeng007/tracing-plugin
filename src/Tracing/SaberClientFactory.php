@@ -10,9 +10,7 @@ namespace ESD\Plugins\Tracing;
 
 
 use ESD\Core\Plugins\Logger\GetLogger;
-use Swlib\Http\BufferStream;
 use Swlib\Http\ContentType;
-use Swlib\Http\Uri;
 use Swlib\SaberGM;
 use Zipkin\Reporters\Http\ClientFactory;
 
@@ -39,9 +37,10 @@ class SaberClientFactory implements ClientFactory
          * @return void
          */
         return function ($payload) use ($options) {
-            $response = SaberGM::post($options['endpoint_url'], $payload,["headers"=>[
-                'Content-Type'=>ContentType::JSON,
-                'Content-Length'=> strlen($payload)
+            $this->debug($payload);
+            $response = SaberGM::post($options['endpoint_url'], $payload, ["headers" => [
+                'Content-Type' => ContentType::JSON,
+                'Content-Length' => strlen($payload)
             ]]);
             $statusCode = $response->getStatusCode();
             if ($statusCode !== 202) {
