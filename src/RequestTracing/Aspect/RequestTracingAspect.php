@@ -12,9 +12,9 @@ use ESD\Plugins\Aop\OrderAspect;
 use ESD\Plugins\EasyRoute\Aspect\RouteAspect;
 use ESD\Plugins\Pack\Aspect\PackAspect;
 use ESD\Plugins\Pack\ClientData;
+use ESD\Plugins\Tracing\SpanStack;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
-use ZipkinOpenTracing\Tracer;
 use const OpenTracing\Tags\SPAN_KIND;
 
 class RequestTracingAspect extends OrderAspect
@@ -43,17 +43,16 @@ class RequestTracingAspect extends OrderAspect
      */
     protected function aroundHttpRequest(MethodInvocation $invocation)
     {
-        $tracer = getDeepContextValueByClassName(Tracer::class);
+        $spanStack = getDeepContextValueByClassName(SpanStack::class);
         $clientData = getDeepContextValueByClassName(ClientData::class);
-        $span = $tracer->startSpan($clientData->getRequest()->getMethod() . "  " . $clientData->getPath());
+        $span = $spanStack->startSpan($clientData->getRequest()->getMethod() . "  " . $clientData->getPath());
         $span->setTag(SPAN_KIND, 'SERVER');
         $span->setTag("http.url", $clientData->getRequest()->getUri()->__toString());
         $span->setTag("http.method", $clientData->getRequest()->getMethod());
         $span->setTag("component", "ESD Server");
-        setContextValue("requestSpan", $span);
-        defer(function () use ($span, $clientData) {
+        defer(function () use ($span, $clientData, $spanStack) {
             $span->setTag("http.status_code", $clientData->getResponse()->getStatusCode());
-            $span->finish();
+            $spanStack->pop();
         });
         $invocation->proceed();
     }
@@ -67,15 +66,15 @@ class RequestTracingAspect extends OrderAspect
      */
     protected function aroundTcpReceive(MethodInvocation $invocation)
     {
-        $tracer = getDeepContextValueByClassName(Tracer::class);
+        $spanStack = getDeepContextValueByClassName(SpanStack::class);
         $clientData = getDeepContextValueByClassName(ClientData::class);
-        $span = $tracer->startSpan($clientData->getRequest()->getMethod());
+        $span = $spanStack->startSpan($clientData->getRequest()->getMethod());
         $span->setTag(SPAN_KIND, 'SERVER');
         $span->setTag("method", "tcp");
         $span->setTag("path", $clientData->getPath());
         $span->setTag("component", "ESD Server");
-        defer(function () use ($span) {
-            $span->finish();
+        defer(function () use ($span, $spanStack) {
+            $spanStack->pop();
         });
         $invocation->proceed();
     }
@@ -89,15 +88,15 @@ class RequestTracingAspect extends OrderAspect
      */
     protected function aroundWsMessage(MethodInvocation $invocation)
     {
-        $tracer = getDeepContextValueByClassName(Tracer::class);
+        $spanStack = getDeepContextValueByClassName(SpanStack::class);
         $clientData = getDeepContextValueByClassName(ClientData::class);
-        $span = $tracer->startSpan($clientData->getRequest()->getMethod());
+        $span = $spanStack->startSpan($clientData->getRequest()->getMethod());
         $span->setTag(SPAN_KIND, 'SERVER');
         $span->setTag("method", "ws");
         $span->setTag("path", $clientData->getPath());
         $span->setTag("component", "ESD Server");
-        defer(function () use ($span) {
-            $span->finish();
+        defer(function () use ($span, $spanStack) {
+            $spanStack->pop();
         });
         $invocation->proceed();
     }
@@ -111,15 +110,15 @@ class RequestTracingAspect extends OrderAspect
      */
     protected function aroundUdpPacket(MethodInvocation $invocation)
     {
-        $tracer = getDeepContextValueByClassName(Tracer::class);
+        $spanStack = getDeepContextValueByClassName(SpanStack::class);
         $clientData = getDeepContextValueByClassName(ClientData::class);
-        $span = $tracer->startSpan($clientData->getRequest()->getMethod());
+        $span = $spanStack->startSpan($clientData->getRequest()->getMethod());
         $span->setTag(SPAN_KIND, 'SERVER');
         $span->setTag("method", "udp");
         $span->setTag("path", $clientData->getPath());
         $span->setTag("component", "ESD Server");
-        defer(function () use ($span) {
-            $span->finish();
+        defer(function () use ($span, $spanStack) {
+            $spanStack->pop();
         });
         $invocation->proceed();
     }

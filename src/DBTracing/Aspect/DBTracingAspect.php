@@ -9,9 +9,9 @@
 namespace ESD\Plugins\DBTracing\Aspect;
 
 use ESD\Plugins\Aop\OrderAspect;
+use ESD\Plugins\Tracing\SpanStack;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
-use ZipkinOpenTracing\Tracer;
 use const OpenTracing\Tags\SPAN_KIND;
 
 class DBTracingAspect extends OrderAspect
@@ -35,17 +35,9 @@ class DBTracingAspect extends OrderAspect
     protected function aroundDBExecute(MethodInvocation $invocation)
     {
         $db = $invocation->getThis();
-
-        $tracer = getDeepContextValueByClassName(Tracer::class);
-        $requestSpan = getDeepContextValue("requestSpan");
-        if ($requestSpan != null) {
-            $span = $tracer->startSpan($db->getType()." Execute", [
-                'child_of' => $requestSpan
-            ]);
-        } else {
-            $span = $tracer->startSpan("Execute");
-        }
-        defer(function ()use ($span){
+        $spanStack = getDeepContextValueByClassName(SpanStack::class);
+        $span = $spanStack->startSpan($db->getType()." Execute");
+        defer(function () use ($span) {
             $span->finish();
         });
         $span->setTag(SPAN_KIND, 'Client');
@@ -53,7 +45,7 @@ class DBTracingAspect extends OrderAspect
         $span->setTag("component", "ESD DB");
         $result = $invocation->proceed();
         $span->setTag("db.statement", $db->getLastQuery());
-        $span->finish();
+        $spanStack->pop();
         return $result;
     }
 }

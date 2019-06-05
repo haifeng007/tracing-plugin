@@ -11,6 +11,7 @@ namespace ESD\Plugins\Tracing\Aspect;
 use ESD\Core\Server\Config\ServerConfig;
 use ESD\Plugins\Aop\OrderAspect;
 use ESD\Plugins\Pack\Aspect\PackAspect;
+use ESD\Plugins\Tracing\SpanStack;
 use ESD\Plugins\Tracing\TracingBuilder;
 use ESD\Server\Co\Server;
 use Go\Aop\Intercept\MethodInvocation;
@@ -43,6 +44,18 @@ class BuildTracingAspect extends OrderAspect
         return "BuildTracingAspect";
     }
 
+    private function createTracer()
+    {
+        $tracer = $this->tracingBuilder->buildTracer($this->serverConfig->getName());
+        $spanStack = new SpanStack($tracer);
+        defer(function () use ($tracer, $spanStack) {
+            $tracer->flush();
+            $spanStack->destroy();
+        });
+        setContextValue("tracer", $tracer);
+        setContextValue("spanStack", $spanStack);
+    }
+
     /**
      * around onHttpRequest
      *
@@ -53,11 +66,7 @@ class BuildTracingAspect extends OrderAspect
      */
     protected function aroundHttpRequest(MethodInvocation $invocation)
     {
-        $tracer = $this->tracingBuilder->buildTracer($this->serverConfig->getName());
-        defer(function () use ($tracer) {
-            $tracer->flush();
-        });
-        setContextValue("tracer", $tracer);
+        $this->createTracer();
     }
 
     /**
@@ -69,11 +78,7 @@ class BuildTracingAspect extends OrderAspect
      */
     protected function aroundTcpReceive(MethodInvocation $invocation)
     {
-        $tracer = $this->tracingBuilder->buildTracer($this->serverConfig->getName());
-        defer(function () use ($tracer) {
-            $tracer->flush();
-        });
-        setContextValue("tracer", $tracer);
+        $this->createTracer();
     }
 
     /**
@@ -85,11 +90,7 @@ class BuildTracingAspect extends OrderAspect
      */
     protected function aroundWsMessage(MethodInvocation $invocation)
     {
-        $tracer = $this->tracingBuilder->buildTracer($this->serverConfig->getName());
-        defer(function () use ($tracer) {
-            $tracer->flush();
-        });
-        setContextValue("tracer", $tracer);
+        $this->createTracer();
     }
 
     /**
@@ -101,10 +102,6 @@ class BuildTracingAspect extends OrderAspect
      */
     protected function aroundUdpPacket(MethodInvocation $invocation)
     {
-        $tracer = $this->tracingBuilder->buildTracer($this->serverConfig->getName());
-        defer(function () use ($tracer) {
-            $tracer->flush();
-        });
-        setContextValue("tracer", $tracer);
+        $this->createTracer();
     }
 }
