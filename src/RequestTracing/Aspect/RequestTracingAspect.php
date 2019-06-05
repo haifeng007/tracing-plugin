@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: administrato
+ * User: 白猫
  * Date: 2019/6/3
  * Time: 18:28
  */
@@ -15,7 +15,12 @@ use ESD\Plugins\Pack\ClientData;
 use ESD\Plugins\Tracing\SpanStack;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
+use const OpenTracing\Tags\COMPONENT;
+use const OpenTracing\Tags\HTTP_STATUS_CODE;
+use const OpenTracing\Tags\HTTP_URL;
 use const OpenTracing\Tags\SPAN_KIND;
+use const OpenTracing\Tags\SPAN_KIND_RPC_SERVER;
+use const Zipkin\Tags\HTTP_METHOD;
 
 class RequestTracingAspect extends OrderAspect
 {
@@ -46,12 +51,12 @@ class RequestTracingAspect extends OrderAspect
         $spanStack = getDeepContextValueByClassName(SpanStack::class);
         $clientData = getDeepContextValueByClassName(ClientData::class);
         $span = $spanStack->startSpan($clientData->getRequest()->getMethod() . "  " . $clientData->getPath());
-        $span->setTag(SPAN_KIND, 'SERVER');
-        $span->setTag("http.url", $clientData->getRequest()->getUri()->__toString());
-        $span->setTag("http.method", $clientData->getRequest()->getMethod());
-        $span->setTag("component", "ESD Server");
+        $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
+        $span->setTag(HTTP_URL, $clientData->getRequest()->getUri()->__toString());
+        $span->setTag(HTTP_METHOD, $clientData->getRequest()->getMethod());
+        $span->setTag(COMPONENT, "ESD Server");
         defer(function () use ($span, $clientData, $spanStack) {
-            $span->setTag("http.status_code", $clientData->getResponse()->getStatusCode());
+            $span->setTag(HTTP_STATUS_CODE, $clientData->getResponse()->getStatusCode());
             $spanStack->pop();
         });
         $invocation->proceed();
@@ -69,10 +74,10 @@ class RequestTracingAspect extends OrderAspect
         $spanStack = getDeepContextValueByClassName(SpanStack::class);
         $clientData = getDeepContextValueByClassName(ClientData::class);
         $span = $spanStack->startSpan($clientData->getRequest()->getMethod());
-        $span->setTag(SPAN_KIND, 'SERVER');
+        $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
         $span->setTag("method", "tcp");
         $span->setTag("path", $clientData->getPath());
-        $span->setTag("component", "ESD Server");
+        $span->setTag(COMPONENT, "ESD Server");
         defer(function () use ($span, $spanStack) {
             $spanStack->pop();
         });
@@ -91,10 +96,10 @@ class RequestTracingAspect extends OrderAspect
         $spanStack = getDeepContextValueByClassName(SpanStack::class);
         $clientData = getDeepContextValueByClassName(ClientData::class);
         $span = $spanStack->startSpan($clientData->getRequest()->getMethod());
-        $span->setTag(SPAN_KIND, 'SERVER');
+        $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
         $span->setTag("method", "ws");
         $span->setTag("path", $clientData->getPath());
-        $span->setTag("component", "ESD Server");
+        $span->setTag(COMPONENT, "ESD Server");
         defer(function () use ($span, $spanStack) {
             $spanStack->pop();
         });
@@ -113,10 +118,10 @@ class RequestTracingAspect extends OrderAspect
         $spanStack = getDeepContextValueByClassName(SpanStack::class);
         $clientData = getDeepContextValueByClassName(ClientData::class);
         $span = $spanStack->startSpan($clientData->getRequest()->getMethod());
-        $span->setTag(SPAN_KIND, 'SERVER');
+        $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
         $span->setTag("method", "udp");
         $span->setTag("path", $clientData->getPath());
-        $span->setTag("component", "ESD Server");
+        $span->setTag(COMPONENT, "ESD Server");
         defer(function () use ($span, $spanStack) {
             $spanStack->pop();
         });

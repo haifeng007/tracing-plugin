@@ -6,19 +6,19 @@
  * Time: 17:22
  */
 
-namespace ESD\Plugins\RequestTracing;
+namespace ESD\Plugins\MethodTracing;
 
 
 use ESD\Core\Context\Context;
 use ESD\Core\PlugIn\AbstractPlugin;
 use ESD\Core\PlugIn\PluginInterfaceManager;
 use ESD\Plugins\Aop\AopConfig;
-use ESD\Plugins\RequestTracing\Aspect\RequestTracingAspect;
+use ESD\Plugins\MethodTracing\Aspect\MethodTracingAspect;
 use ESD\Plugins\Tracing\TracingConfig;
 use ESD\Plugins\Tracing\TracingPlugin;
 
 
-class RequestTracingPlugin extends AbstractPlugin
+class MethodTracingPlugin extends AbstractPlugin
 {
     /**
      * TracingPlugin constructor.
@@ -51,7 +51,7 @@ class RequestTracingPlugin extends AbstractPlugin
         $aopConfig = DIget(AopConfig::class);
         $tracingConfig = DIget(TracingConfig::class);
         if ($tracingConfig->isEnable()) {
-            $aopConfig->addAspect(new RequestTracingAspect());
+            $aopConfig->addAspect(new MethodTracingAspect());
         }
     }
 
@@ -60,7 +60,7 @@ class RequestTracingPlugin extends AbstractPlugin
      */
     public function getName(): string
     {
-        return "RequestTracing";
+        return "MethodTracingPlugin";
     }
 
     /**

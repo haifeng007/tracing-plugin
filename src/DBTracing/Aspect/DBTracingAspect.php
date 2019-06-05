@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: administrato
+ * User: 白猫
  * Date: 2019/6/3
  * Time: 18:28
  */
@@ -12,7 +12,11 @@ use ESD\Plugins\Aop\OrderAspect;
 use ESD\Plugins\Tracing\SpanStack;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
+use const OpenTracing\Tags\COMPONENT;
+use const OpenTracing\Tags\DATABASE_STATEMENT;
+use const OpenTracing\Tags\DATABASE_TYPE;
 use const OpenTracing\Tags\SPAN_KIND;
+use const OpenTracing\Tags\SPAN_KIND_RPC_CLIENT;
 
 class DBTracingAspect extends OrderAspect
 {
@@ -25,8 +29,7 @@ class DBTracingAspect extends OrderAspect
     }
 
     /**
-     * around onUdpPacket
-     *
+     * around dbExecute
      * @param MethodInvocation $invocation Invocation
      * @Around("within(ESD\Psr\DB\DBInterface+) && execution(public **->execute(*))")
      * @return mixed
@@ -34,17 +37,18 @@ class DBTracingAspect extends OrderAspect
      */
     protected function aroundDBExecute(MethodInvocation $invocation)
     {
+        list($name, $call) = $invocation->getArguments();
         $db = $invocation->getThis();
         $spanStack = getDeepContextValueByClassName(SpanStack::class);
-        $span = $spanStack->startSpan($db->getType()." Execute");
+        $span = $spanStack->startSpan($db->getType() . " Execute $name");
         defer(function () use ($span) {
             $span->finish();
         });
-        $span->setTag(SPAN_KIND, 'Client');
-        $span->setTag("db.type", $db->getType());
-        $span->setTag("component", "ESD DB");
+        $span->setTag(SPAN_KIND, SPAN_KIND_RPC_CLIENT);
+        $span->setTag(DATABASE_TYPE, $db->getType());
+        $span->setTag(COMPONENT, "ESD DB");
         $result = $invocation->proceed();
-        $span->setTag("db.statement", $db->getLastQuery());
+        $span->setTag(DATABASE_STATEMENT, $db->getLastQuery());
         $spanStack->pop();
         return $result;
     }

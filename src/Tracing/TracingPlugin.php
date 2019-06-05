@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: administrato
+ * User: 白猫
  * Date: 2019/6/3
  * Time: 17:22
  */
@@ -70,7 +70,9 @@ class TracingPlugin extends AbstractPlugin
         parent::init($context);
         $aopConfig = DIget(AopConfig::class);
         $this->tracingConfig->merge();
-        $aopConfig->addAspect(new BuildTracingAspect());
+        if ($this->tracingConfig->isEnable()) {
+            $aopConfig->addAspect(new BuildTracingAspect());
+        }
     }
 
     /**
@@ -88,7 +90,7 @@ class TracingPlugin extends AbstractPlugin
      */
     public function beforeServerStart(Context $context)
     {
-       return;
+        return;
     }
 
     /**

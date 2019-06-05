@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: administrato
+ * User: 白猫
  * Date: 2019/6/3
  * Time: 17:22
  */
@@ -14,6 +14,7 @@ use ESD\Core\PlugIn\AbstractPlugin;
 use ESD\Core\PlugIn\PluginInterfaceManager;
 use ESD\Plugins\Aop\AopConfig;
 use ESD\Plugins\DBTracing\Aspect\DBTracingAspect;
+use ESD\Plugins\Tracing\TracingConfig;
 use ESD\Plugins\Tracing\TracingPlugin;
 
 
@@ -48,7 +49,10 @@ class DBTracingPlugin extends AbstractPlugin
     {
         parent::init($context);
         $aopConfig = DIget(AopConfig::class);
-        $aopConfig->addAspect(new DBTracingAspect());
+        $tracingConfig = DIget(TracingConfig::class);
+        if ($tracingConfig->isEnable()) {
+            $aopConfig->addAspect(new DBTracingAspect());
+        }
     }
 
     /**
