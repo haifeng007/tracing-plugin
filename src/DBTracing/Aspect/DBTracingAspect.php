@@ -35,24 +35,25 @@ class DBTracingAspect extends OrderAspect
     protected function aroundDBExecute(MethodInvocation $invocation)
     {
         $db = $invocation->getThis();
+
         $tracer = getDeepContextValueByClassName(Tracer::class);
         $requestSpan = getDeepContextValue("requestSpan");
         if ($requestSpan != null) {
-            $span = $tracer->startSpan("Execute", [
+            $span = $tracer->startSpan($db->getType()." Execute", [
                 'child_of' => $requestSpan
             ]);
         } else {
             $span = $tracer->startSpan("Execute");
         }
-        $span->setTag(SPAN_KIND, 'Client');
-
-        $span->setTag("db.type", $db->getType());
-        $span->setTag("component", "ESD DB");
-        defer(function () use ($span) {
+        defer(function ()use ($span){
             $span->finish();
         });
+        $span->setTag(SPAN_KIND, 'Client');
+        $span->setTag("db.type", $db->getType());
+        $span->setTag("component", "ESD DB");
         $result = $invocation->proceed();
         $span->setTag("db.statement", $db->getLastQuery());
+        $span->finish();
         return $result;
     }
 }

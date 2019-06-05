@@ -78,6 +78,20 @@ class CUser extends GoController
     }
 
     /**
+     * @GetMapping("user2")
+     * @PreAuthorize(value="hasRole('user')")
+     * @return User
+     * @throws \ESD\Plugins\Mysql\MysqlException
+     * @throws \ESD\Plugins\Validate\ValidationException
+     * @throws \ESD\Core\Exception
+     */
+    public function user2()
+    {
+        $id = $this->request->query("id");
+        return User::select($id);
+    }
+
+    /**
      * @GetMapping()
      * @CacheEvict(namespace="user",allEntries=true)
      */
