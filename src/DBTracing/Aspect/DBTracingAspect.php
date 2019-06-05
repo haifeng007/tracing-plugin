@@ -39,7 +39,7 @@ class DBTracingAspect extends OrderAspect
     {
         list($name, $call) = $invocation->getArguments();
         $db = $invocation->getThis();
-        $spanStack = getDeepContextValueByClassName(SpanStack::class);
+        $spanStack = SpanStack::get();
         $span = $spanStack->startSpan($db->getType() . " Execute $name");
         defer(function () use ($span) {
             $span->finish();

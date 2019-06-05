@@ -42,7 +42,7 @@ class MethodTracingAspect extends OrderAspect
     protected function aroundMethodExecute(MethodInvocation $invocation)
     {
         $name = $invocation->getMethod()->name;
-        $spanStack = getDeepContextValueByClassName(SpanStack::class);
+        $spanStack = SpanStack::get();
         $span = $spanStack->startSpan($invocation->getMethod()->getDeclaringClass()->getShortName() . "::$name");
         defer(function () use ($span) {
             $span->finish();

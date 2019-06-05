@@ -9,7 +9,7 @@
 namespace ESD\Plugins\Tracing;
 
 
-use Zipkin\Span;
+use ZipkinOpenTracing\Span;
 use ZipkinOpenTracing\Tracer;
 use const OpenTracing\Formats\TEXT_MAP;
 
@@ -31,7 +31,18 @@ class SpanStack
 
     public function push($span)
     {
-        $this->spans[] = $span;
+        if ($span != null) {
+            $this->spans[] = $span;
+        }
+    }
+
+    public function now()
+    {
+        $count = count($this->spans);
+        if ($count <= 0) {
+            return null;
+        }
+        return $this->spans[$count - 1];
     }
 
     public function pop()
@@ -39,6 +50,17 @@ class SpanStack
         $span = array_pop($this->spans);
         $span->finish();
         return $span;
+    }
+
+    /**
+     * @param Span $span
+     * @return array
+     */
+    public function injectHeaders(Span $span)
+    {
+        $headers = [];
+        $this->tracer->inject($span->getContext(), TEXT_MAP, $headers);
+        return $headers;
     }
 
     public function buildContext(array $carrier)
@@ -81,5 +103,19 @@ class SpanStack
             $span->finish();
         }
         $this->spans = null;
+    }
+
+    public static function get()
+    {
+        $result = getContextValueByClassName(SpanStack::class);
+        if ($result == null) {
+            $trace = getDeepContextValueByClassName(Tracer::class);
+            $parentSpanStack = getDeepContextValueByClassName(SpanStack::class);
+            $spanStack = new SpanStack($trace);
+            $spanStack->push($parentSpanStack->now());
+            setContextValue("spanStack", $spanStack);
+            return $spanStack;
+        }
+        return $result;
     }
 }

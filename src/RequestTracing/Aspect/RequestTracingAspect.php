@@ -48,7 +48,7 @@ class RequestTracingAspect extends OrderAspect
      */
     protected function aroundHttpRequest(MethodInvocation $invocation)
     {
-        $spanStack = getDeepContextValueByClassName(SpanStack::class);
+        $spanStack = SpanStack::get();
         $clientData = getDeepContextValueByClassName(ClientData::class);
         $traceContext = $spanStack->buildContext($clientData->getRequest()->getHeaders());
         $span = $spanStack->startSpan($clientData->getRequest()->getMethod() . "  " . $clientData->getPath(), $traceContext);
@@ -72,7 +72,7 @@ class RequestTracingAspect extends OrderAspect
      */
     protected function aroundTcpReceive(MethodInvocation $invocation)
     {
-        $spanStack = getDeepContextValueByClassName(SpanStack::class);
+        $spanStack = SpanStack::get();
         $clientData = getDeepContextValueByClassName(ClientData::class);
         $span = $spanStack->startSpan($clientData->getRequest()->getMethod());
         $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
@@ -94,7 +94,7 @@ class RequestTracingAspect extends OrderAspect
      */
     protected function aroundWsMessage(MethodInvocation $invocation)
     {
-        $spanStack = getDeepContextValueByClassName(SpanStack::class);
+        $spanStack = SpanStack::get();
         $clientData = getDeepContextValueByClassName(ClientData::class);
         $span = $spanStack->startSpan($clientData->getRequest()->getMethod());
         $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
@@ -116,7 +116,7 @@ class RequestTracingAspect extends OrderAspect
      */
     protected function aroundUdpPacket(MethodInvocation $invocation)
     {
-        $spanStack = getDeepContextValueByClassName(SpanStack::class);
+        $spanStack = SpanStack::get();
         $clientData = getDeepContextValueByClassName(ClientData::class);
         $span = $spanStack->startSpan($clientData->getRequest()->getMethod());
         $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);

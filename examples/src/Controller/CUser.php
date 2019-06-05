@@ -9,6 +9,7 @@
 namespace ESD\Plugins\Tracing\Examples\Controller;
 
 use DI\Annotation\Inject;
+use ESD\Coroutine\Channel\ChannelImpl;
 use ESD\Examples\Model\User;
 use ESD\Examples\Service\UserService;
 use ESD\Go\GoController;
@@ -19,6 +20,8 @@ use ESD\Plugins\EasyRoute\Annotation\RequestBody;
 use ESD\Plugins\EasyRoute\Annotation\RestController;
 use ESD\Plugins\Security\Annotation\PreAuthorize;
 use ESD\Plugins\Security\Beans\Principal;
+use GuzzleHttp\Client;
+use Swlib\SaberGM;
 
 /**
  * @RestController("user")
@@ -89,6 +92,36 @@ class CUser extends GoController
     {
         $id = $this->request->query("id");
         return User::select($id);
+    }
+
+    /**
+     * @GetMapping()
+     */
+    public function httpClient()
+    {
+        $channel = new ChannelImpl(4);
+        goWithContext(function () use ($channel) {
+            $client = new Client();
+            $result = $client->request('GET', 'http://httpbin.org/get');
+            $channel->push($result);
+        });
+        goWithContext(function () use ($channel) {
+            $client = new Client();
+            $result = $client->request('GET', 'http://httpbin.org/get');
+            $channel->push($result);
+        });
+        goWithContext(function () use ($channel) {
+            $result = SaberGM::get('http://httpbin.org/get');
+            $channel->push($result);
+        });
+        goWithContext(function () use ($channel) {
+            $result = SaberGM::get('http://httpbin.org/get');
+            $channel->push($result);
+        });
+        for ($i = 0; $i < 4; $i++) {
+            $channel->pop();
+        }
+        return "ok";
     }
 
     /**
