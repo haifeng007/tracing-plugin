@@ -50,7 +50,10 @@ class RequestTracingAspect extends OrderAspect
     {
         $spanStack = getDeepContextValueByClassName(SpanStack::class);
         $clientData = getDeepContextValueByClassName(ClientData::class);
-        $span = $spanStack->startSpan($clientData->getRequest()->getMethod() . "  " . $clientData->getPath());
+
+            $traceContext = $spanStack->buildContext($clientData->getRequest()->getHeaders());
+
+        $span = $spanStack->startSpan($clientData->getRequest()->getMethod() . "  " . $clientData->getPath(), $traceContext);
         $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
         $span->setTag(HTTP_URL, $clientData->getRequest()->getUri()->__toString());
         $span->setTag(HTTP_METHOD, $clientData->getRequest()->getMethod());

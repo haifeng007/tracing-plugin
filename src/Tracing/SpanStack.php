@@ -11,6 +11,7 @@ namespace ESD\Plugins\Tracing;
 
 use Zipkin\Span;
 use ZipkinOpenTracing\Tracer;
+use const OpenTracing\Formats\TEXT_MAP;
 
 class SpanStack
 {
@@ -40,23 +41,35 @@ class SpanStack
         return $span;
     }
 
+    public function buildContext(array $carrier)
+    {
+        return $this->tracer->extract(TEXT_MAP, $carrier);
+    }
+
     /**
      * @param $name
+     * @param null $context
      * @return \ZipkinOpenTracing\Span
      */
-    public function startSpan($name)
+    public function startSpan($name, $context = null)
     {
-        $count = count($this->spans);
-        $parentSpan = null;
-        if ($count > 0) {
-            $parentSpan = $this->spans[$count - 1];
-        }
-        if ($parentSpan != null) {
+        if ($context != null) {
             $span = $this->tracer->startSpan($name, [
-                'child_of' => $parentSpan
+                'child_of' => $context
             ]);
         } else {
-            $span = $this->tracer->startSpan($name);
+            $count = count($this->spans);
+            $parentSpan = null;
+            if ($count > 0) {
+                $parentSpan = $this->spans[$count - 1];
+            }
+            if ($parentSpan != null) {
+                $span = $this->tracer->startSpan($name, [
+                    'child_of' => $parentSpan
+                ]);
+            } else {
+                $span = $this->tracer->startSpan($name);
+            }
         }
         $this->push($span);
         return $span;
