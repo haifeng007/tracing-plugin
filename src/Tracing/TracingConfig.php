@@ -32,7 +32,7 @@ class TracingConfig extends BaseConfig
      * 取样比例
      * @var float
      */
-    protected $sampling_ratio = 1;
+    protected $sampling_ratio = 1.0;
 
     public function __construct()
     {

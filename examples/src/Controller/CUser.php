@@ -20,6 +20,7 @@ use ESD\Plugins\EasyRoute\Annotation\RequestBody;
 use ESD\Plugins\EasyRoute\Annotation\RestController;
 use ESD\Plugins\Security\Annotation\PreAuthorize;
 use ESD\Plugins\Security\Beans\Principal;
+use ESD\Server\Co\Server;
 use GuzzleHttp\Client;
 use Swlib\SaberGM;
 
@@ -115,6 +116,7 @@ class CUser extends GoController
             $channel->push($result);
         });
         goWithContext(function () use ($channel) {
+            Server::$instance->getLog()->debug("1");
             $result = SaberGM::get('http://httpbin.org/get');
             $channel->push($result);
         });

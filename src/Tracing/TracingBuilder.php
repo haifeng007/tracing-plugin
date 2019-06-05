@@ -12,6 +12,7 @@ namespace ESD\Plugins\Tracing;
 use Zipkin\Endpoint;
 use Zipkin\Reporters\Http;
 use Zipkin\Samplers\BinarySampler;
+use Zipkin\Samplers\PercentageSampler;
 use Zipkin\TracingBuilder as ZipkinTracingBuilder;
 use ZipkinOpenTracing\Tracer;
 
@@ -27,6 +28,12 @@ class TracingBuilder
         $this->tracingConfig = DIGet(TracingConfig::class);
     }
 
+    /**
+     * @param $serviceName
+     * @param null $ipv4
+     * @param null $port
+     * @return Tracer
+     */
     public function buildTracer($serviceName, $ipv4 = null, $port = null)
     {
         $endpoint = Endpoint::create($serviceName, $ipv4, null, $port);
@@ -35,7 +42,7 @@ class TracingBuilder
         $reporter = new Http($clientFactory, [
             'endpoint_url' => "http://$url/api/v2/spans",
         ]);
-        $sampler = BinarySampler::createAsAlwaysSample();
+        $sampler = PercentageSampler::create($this->tracingConfig->getSamplingRatio());
         $tracing = ZipkinTracingBuilder::create()
             ->havingLocalEndpoint($endpoint)
             ->havingSampler($sampler)

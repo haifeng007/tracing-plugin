@@ -9,6 +9,7 @@
 namespace ESD\Plugins\Tracing;
 
 
+use ESD\Core\Plugins\Logger\LoggerExtra;
 use ZipkinOpenTracing\Span;
 use ZipkinOpenTracing\Tracer;
 use const OpenTracing\Formats\TEXT_MAP;
@@ -94,6 +95,7 @@ class SpanStack
             }
         }
         $this->push($span);
+        LoggerExtra::get()->addContext("traceId",$span->getContext()->getContext()->getTraceId());
         return $span;
     }
 
