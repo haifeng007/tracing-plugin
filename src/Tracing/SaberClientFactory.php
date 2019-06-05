@@ -37,7 +37,6 @@ class SaberClientFactory implements ClientFactory
          * @return void
          */
         return function ($payload) use ($options) {
-            $this->debug($payload);
             $response = SaberGM::post($options['endpoint_url'], $payload, ["headers" => [
                 'Content-Type' => ContentType::JSON,
                 'Content-Length' => strlen($payload)
