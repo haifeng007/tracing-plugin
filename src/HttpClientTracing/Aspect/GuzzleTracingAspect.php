@@ -12,8 +12,10 @@ use ESD\Plugins\Aop\OrderAspect;
 use ESD\Plugins\Tracing\SpanStack;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use const OpenTracing\Tags\COMPONENT;
+use const OpenTracing\Tags\ERROR;
 use const OpenTracing\Tags\HTTP_METHOD;
 use const OpenTracing\Tags\HTTP_STATUS_CODE;
 use const OpenTracing\Tags\HTTP_URL;
@@ -39,12 +41,15 @@ class GuzzleTracingAspect extends OrderAspect
      */
     protected function aroundClientInterfaceSend(MethodInvocation $invocation)
     {
+        /** @var RequestInterface $request */
         $request = $invocation->getArguments()[0];
         $name = $request->getUri();
         $spanStack = SpanStack::get();
         $span = $spanStack->startSpan($request->getMethod() . " $name");
         $headers = $spanStack->injectHeaders($span);
-        $request->withHeaders($headers);
+        foreach ($headers as $key => $value) {
+            $request->withHeader($key, $value);
+        }
         $span->setTag(HTTP_URL, $request->getUri()->__toString());
         $span->setTag(HTTP_METHOD, $request->getMethod());
         $span->setTag(SPAN_KIND, SPAN_KIND_RPC_CLIENT);
@@ -55,6 +60,9 @@ class GuzzleTracingAspect extends OrderAspect
         $result = $invocation->proceed();
         if ($result instanceof ResponseInterface) {
             $span->setTag(HTTP_STATUS_CODE, $result->getStatusCode());
+            if ($result->getStatusCode() != 200) {
+                $span->setTag(ERROR, $result->getBody()->__toString());
+            }
         }
         $spanStack->pop();
         return $result;

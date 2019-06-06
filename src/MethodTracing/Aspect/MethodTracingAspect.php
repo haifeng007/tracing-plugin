@@ -13,6 +13,7 @@ use ESD\Plugins\Aop\OrderAspect;
 use ESD\Plugins\Tracing\SpanStack;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
+use const OpenTracing\Tags\ERROR;
 use const OpenTracing\Tags\SPAN_KIND;
 use const OpenTracing\Tags\SPAN_KIND_RPC_SERVER;
 
@@ -48,8 +49,15 @@ class MethodTracingAspect extends OrderAspect
             $span->finish();
         });
         $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
-        $result = $invocation->proceed();
-        $spanStack->pop();
+        $result = null;
+        try {
+            $result = $invocation->proceed();
+        } catch (\Throwable $e) {
+            $span->setTag(ERROR, $e->getMessage());
+            throw $e;
+        } finally {
+            $spanStack->pop();
+        }
         return $result;
     }
 }
