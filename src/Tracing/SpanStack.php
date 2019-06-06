@@ -95,12 +95,13 @@ class SpanStack
             }
         }
         $this->push($span);
-        LoggerExtra::get()->addContext("traceId",$span->getContext()->getContext()->getTraceId());
+        LoggerExtra::get()->addContext("traceId", $span->getContext()->getContext()->getTraceId());
         return $span;
     }
 
     public function destroy()
     {
+        if (empty($this->spans)) return;
         foreach ($this->spans as $span) {
             $span->finish();
         }

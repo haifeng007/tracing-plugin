@@ -39,7 +39,8 @@ class SaberClientFactory implements ClientFactory
         return function ($payload) use ($options) {
             $response = SaberGM::post($options['endpoint_url'], $payload, ["headers" => [
                 'Content-Type' => ContentType::JSON,
-                'Content-Length' => strlen($payload)
+                'Content-Length' => strlen($payload),
+                'Accept-Encoding' => 'gzip'
             ]]);
             $statusCode = $response->getStatusCode();
             if ($statusCode !== 202) {

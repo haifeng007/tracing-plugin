@@ -65,7 +65,7 @@ class RequestTracingAspect extends OrderAspect
             $span->setTag(HTTP_STATUS_CODE, $clientData->getResponse()->getStatusCode());
             $spanStack->pop();
         });
-        $invocation->proceed();
+        return $invocation->proceed();
     }
 
     /**
