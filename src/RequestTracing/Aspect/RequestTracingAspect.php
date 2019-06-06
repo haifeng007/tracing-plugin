@@ -8,6 +8,7 @@
 
 namespace ESD\Plugins\RequestTracing\Aspect;
 
+use ESD\Coroutine\Co;
 use ESD\Plugins\Aop\OrderAspect;
 use ESD\Plugins\EasyRoute\Aspect\RouteAspect;
 use ESD\Plugins\Pack\Aspect\PackAspect;
