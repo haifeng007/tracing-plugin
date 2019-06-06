@@ -50,14 +50,15 @@ class TracingBuilder
     }
 
     /**
+     * @param bool $force
      * @return Tracer
      */
-    public function buildTracer()
+    public function buildTracer($force = false)
     {
         $isSampled = $this->sampler->isSampled(null);
-        if($isSampled) {
+        if ($isSampled || $force) {
             return new Tracer($this->tracing);
-        }else{
+        } else {
             return null;
         }
     }
