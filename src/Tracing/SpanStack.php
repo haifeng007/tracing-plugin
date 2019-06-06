@@ -113,6 +113,7 @@ class SpanStack
         $result = getContextValueByClassName(SpanStack::class);
         if ($result == null) {
             $trace = getDeepContextValueByClassName(Tracer::class);
+            if ($trace == null) return null;
             $parentSpanStack = getDeepContextValueByClassName(SpanStack::class);
             $spanStack = new SpanStack($trace);
             $spanStack->push($parentSpanStack->now());

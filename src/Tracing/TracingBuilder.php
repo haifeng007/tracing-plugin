@@ -9,6 +9,7 @@
 namespace ESD\Plugins\Tracing;
 
 
+use ESD\Server\Co\Server;
 use Zipkin\Endpoint;
 use Zipkin\Reporters\Http;
 use Zipkin\Samplers\BinarySampler;
@@ -22,32 +23,42 @@ class TracingBuilder
      * @var TracingConfig
      */
     private $tracingConfig;
+    /**
+     * @var PercentageSampler
+     */
+    private $sampler;
+    /**
+     * @var \Zipkin\DefaultTracing
+     */
+    private $tracing;
 
     public function __construct()
     {
         $this->tracingConfig = DIGet(TracingConfig::class);
-    }
-
-    /**
-     * @param $serviceName
-     * @param null $ipv4
-     * @param null $port
-     * @return Tracer
-     */
-    public function buildTracer($serviceName, $ipv4 = null, $port = null)
-    {
-        $endpoint = Endpoint::create($serviceName, $ipv4, null, $port);
+        $this->sampler = PercentageSampler::create($this->tracingConfig->getSamplingRatio());
+        $endpoint = Endpoint::create(Server::$instance->getServerConfig()->getName());
         $clientFactory = SaberClientFactory::create();
         $url = $this->tracingConfig->getHost() . ":" . $this->tracingConfig->getPort();
         $reporter = new Http($clientFactory, [
             'endpoint_url' => "http://$url/api/v2/spans",
         ]);
-        $sampler = PercentageSampler::create($this->tracingConfig->getSamplingRatio());
-        $tracing = ZipkinTracingBuilder::create()
+        $this->tracing = ZipkinTracingBuilder::create()
             ->havingLocalEndpoint($endpoint)
-            ->havingSampler($sampler)
             ->havingReporter($reporter)
+            ->havingSampler(BinarySampler::createAsAlwaysSample())
             ->build();
-        return new Tracer($tracing);
+    }
+
+    /**
+     * @return Tracer
+     */
+    public function buildTracer()
+    {
+        $isSampled = $this->sampler->isSampled(null);
+        if($isSampled) {
+            return new Tracer($this->tracing);
+        }else{
+            return null;
+        }
     }
 }

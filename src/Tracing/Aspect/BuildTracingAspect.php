@@ -46,14 +46,16 @@ class BuildTracingAspect extends OrderAspect
 
     private function createTracer()
     {
-        $tracer = $this->tracingBuilder->buildTracer($this->serverConfig->getName());
-        $spanStack = new SpanStack($tracer);
-        defer(function () use ($tracer, $spanStack) {
-            $tracer->flush();
-            $spanStack->destroy();
-        });
-        setContextValue("tracer", $tracer);
-        setContextValue("spanStack", $spanStack);
+        $tracer = $this->tracingBuilder->buildTracer();
+        if ($tracer != null) {
+            $spanStack = new SpanStack($tracer);
+            defer(function () use ($tracer, $spanStack) {
+                $tracer->flush();
+                $spanStack->destroy();
+            });
+            setContextValue("tracer", $tracer);
+            setContextValue("spanStack", $spanStack);
+        }
     }
 
     /**

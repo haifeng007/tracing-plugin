@@ -42,21 +42,25 @@ class MethodTracingAspect extends OrderAspect
      */
     protected function aroundMethodExecute(MethodInvocation $invocation)
     {
-        $name = $invocation->getMethod()->name;
         $spanStack = SpanStack::get();
-        $span = $spanStack->startSpan($invocation->getMethod()->getDeclaringClass()->getShortName() . "::$name");
-        defer(function () use ($span) {
-            $span->finish();
-        });
-        $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
-        $result = null;
-        try {
+        if($spanStack!=null) {
+            $name = $invocation->getMethod()->name;
+            $span = $spanStack->startSpan($invocation->getMethod()->getDeclaringClass()->getShortName() . "::$name");
+            defer(function () use ($span) {
+                $span->finish();
+            });
+            $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
+            $result = null;
+            try {
+                $result = $invocation->proceed();
+            } catch (\Throwable $e) {
+                $span->setTag(ERROR, $e->getMessage());
+                throw $e;
+            } finally {
+                $spanStack->pop();
+            }
+        }else{
             $result = $invocation->proceed();
-        } catch (\Throwable $e) {
-            $span->setTag(ERROR, $e->getMessage());
-            throw $e;
-        } finally {
-            $spanStack->pop();
         }
         return $result;
     }

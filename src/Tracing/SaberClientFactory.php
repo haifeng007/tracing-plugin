@@ -11,12 +11,21 @@ namespace ESD\Plugins\Tracing;
 
 use ESD\Core\Plugins\Logger\GetLogger;
 use Swlib\Http\ContentType;
-use Swlib\SaberGM;
 use Zipkin\Reporters\Http\ClientFactory;
 
 class SaberClientFactory implements ClientFactory
 {
     use GetLogger;
+    private $cli;
+
+    /**
+     * @var array
+     */
+    protected $channel;
+    /**
+     * @var TracingConfig
+     */
+    private $config;
 
     /**
      * @return SaberClientFactory
@@ -25,6 +34,12 @@ class SaberClientFactory implements ClientFactory
     public static function create()
     {
         return new self();
+    }
+
+    public function __construct()
+    {
+        $this->channel = [];
+        $this->config = DIGet(TracingConfig::class);
     }
 
     /**
@@ -37,15 +52,23 @@ class SaberClientFactory implements ClientFactory
          * @return void
          */
         return function ($payload) use ($options) {
-            $response = SaberGM::post($options['endpoint_url'], $payload, ["headers" => [
-                'Content-Type' => ContentType::JSON,
-                'Content-Length' => strlen($payload),
-                'Accept-Encoding' => 'gzip'
-            ]]);
-            $statusCode = $response->getStatusCode();
-            if ($statusCode !== 202) {
-                $this->warn(sprintf('Reporting of spans failed, status code %d', $statusCode));
-            }
+            go(function () use ($payload) {
+                $cli = array_shift($this->channel);
+                if ($cli == null) {
+                    $cli = new \Swoole\Coroutine\Http\Client($this->config->getHost(), $this->config->getPort());
+                }
+                $cli->setHeaders([
+                    'Content-Type' => ContentType::JSON,
+                    'Content-Length' => strlen($payload),
+                    'Accept-Encoding' => 'gzip'
+                ]);
+                $cli->post('/api/v2/spans', $payload);
+                $statusCode = $cli->statusCode;
+                if ($statusCode !== 202) {
+                    $this->warn(sprintf('Reporting of spans failed, status code %d', $statusCode));
+                }
+                $this->channel[] = $cli;
+            });
         };
     }
 }

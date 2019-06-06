@@ -38,25 +38,29 @@ class DBTracingAspect extends OrderAspect
      */
     protected function aroundDBExecute(MethodInvocation $invocation)
     {
-        list($name, $call) = $invocation->getArguments();
-        $db = $invocation->getThis();
         $spanStack = SpanStack::get();
-        $span = $spanStack->startSpan($db->getType() . " Execute $name");
-        defer(function () use ($span) {
-            $span->finish();
-        });
-        $span->setTag(SPAN_KIND, SPAN_KIND_RPC_CLIENT);
-        $span->setTag(DATABASE_TYPE, $db->getType());
-        $span->setTag(COMPONENT, "ESD DB");
-        $result = null;
-        try {
+        if ($spanStack != null) {
+            list($name, $call) = $invocation->getArguments();
+            $db = $invocation->getThis();
+            $span = $spanStack->startSpan($db->getType() . " Execute $name");
+            defer(function () use ($span) {
+                $span->finish();
+            });
+            $span->setTag(SPAN_KIND, SPAN_KIND_RPC_CLIENT);
+            $span->setTag(DATABASE_TYPE, $db->getType());
+            $span->setTag(COMPONENT, "ESD DB");
+            $result = null;
+            try {
+                $result = $invocation->proceed();
+            } catch (\Throwable $e) {
+                $span->setTag(ERROR, $e->getMessage());
+                throw $e;
+            } finally {
+                $span->setTag(DATABASE_STATEMENT, $db->getLastQuery());
+                $spanStack->pop();
+            }
+        }else{
             $result = $invocation->proceed();
-        } catch (\Throwable $e) {
-            $span->setTag(ERROR, $e->getMessage());
-            throw $e;
-        } finally {
-            $span->setTag(DATABASE_STATEMENT, $db->getLastQuery());
-            $spanStack->pop();
         }
         return $result;
     }
