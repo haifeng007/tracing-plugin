@@ -16,6 +16,7 @@ use ESD\Plugins\Tracing\SpanStack;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
 use const OpenTracing\Tags\COMPONENT;
+use const OpenTracing\Tags\ERROR;
 use const OpenTracing\Tags\HTTP_STATUS_CODE;
 use const OpenTracing\Tags\HTTP_URL;
 use const OpenTracing\Tags\SPAN_KIND;
@@ -57,6 +58,10 @@ class RequestTracingAspect extends OrderAspect
         $span->setTag(HTTP_METHOD, $clientData->getRequest()->getMethod());
         $span->setTag(COMPONENT, "ESD Server");
         defer(function () use ($span, $clientData, $spanStack) {
+            $e = getContextValue("lastException");
+            if ($e != null) {
+                $span->setTag(ERROR, $e->getMessage());
+            }
             $span->setTag(HTTP_STATUS_CODE, $clientData->getResponse()->getStatusCode());
             $spanStack->pop();
         });
