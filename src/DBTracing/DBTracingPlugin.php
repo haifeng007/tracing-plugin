@@ -69,7 +69,6 @@ class DBTracingPlugin extends AbstractPlugin
      */
     public function beforeServerStart(Context $context)
     {
-
     }
 
     /**

@@ -83,7 +83,6 @@ class CUser extends GoController
 
     /**
      * @GetMapping("user2")
-     * @PreAuthorize(value="hasRole('user')")
      * @return User
      * @throws \ESD\Plugins\Mysql\MysqlException
      * @throws \ESD\Plugins\Validate\ValidationException

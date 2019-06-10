@@ -95,12 +95,13 @@ class SpanStack
             }
         }
         $this->push($span);
-        LoggerExtra::get()->addContext("traceId",$span->getContext()->getContext()->getTraceId());
+        LoggerExtra::get()->addContext("traceId", $span->getContext()->getContext()->getTraceId());
         return $span;
     }
 
     public function destroy()
     {
+        if (empty($this->spans)) return;
         foreach ($this->spans as $span) {
             $span->finish();
         }
@@ -112,6 +113,7 @@ class SpanStack
         $result = getContextValueByClassName(SpanStack::class);
         if ($result == null) {
             $trace = getDeepContextValueByClassName(Tracer::class);
+            if ($trace == null) return null;
             $parentSpanStack = getDeepContextValueByClassName(SpanStack::class);
             $spanStack = new SpanStack($trace);
             $spanStack->push($parentSpanStack->now());

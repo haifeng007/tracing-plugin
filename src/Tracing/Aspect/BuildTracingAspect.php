@@ -8,6 +8,7 @@
 
 namespace ESD\Plugins\Tracing\Aspect;
 
+use ESD\Core\Server\Beans\Request;
 use ESD\Core\Server\Config\ServerConfig;
 use ESD\Plugins\Aop\OrderAspect;
 use ESD\Plugins\Pack\Aspect\PackAspect;
@@ -44,16 +45,18 @@ class BuildTracingAspect extends OrderAspect
         return "BuildTracingAspect";
     }
 
-    private function createTracer()
+    private function createTracer($force = false)
     {
-        $tracer = $this->tracingBuilder->buildTracer($this->serverConfig->getName());
-        $spanStack = new SpanStack($tracer);
-        defer(function () use ($tracer, $spanStack) {
-            $tracer->flush();
-            $spanStack->destroy();
-        });
-        setContextValue("tracer", $tracer);
-        setContextValue("spanStack", $spanStack);
+        $tracer = $this->tracingBuilder->buildTracer($force);
+        if ($tracer != null) {
+            $spanStack = new SpanStack($tracer);
+            defer(function () use ($tracer, $spanStack) {
+                $tracer->flush();
+                $spanStack->destroy();
+            });
+            setContextValue("tracer", $tracer);
+            setContextValue("spanStack", $spanStack);
+        }
     }
 
     /**
@@ -66,7 +69,13 @@ class BuildTracingAspect extends OrderAspect
      */
     protected function aroundHttpRequest(MethodInvocation $invocation)
     {
-        $this->createTracer();
+        /** @var Request $request */
+        list($request, $response) = $invocation->getArguments();
+        if (!empty($request->getHeader("x-b3-traceid"))) {
+            $this->createTracer(true);
+        } else {
+            $this->createTracer();
+        }
     }
 
     /**

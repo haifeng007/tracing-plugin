@@ -16,6 +16,7 @@ use ESD\Plugins\Tracing\SpanStack;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
 use const OpenTracing\Tags\COMPONENT;
+use const OpenTracing\Tags\ERROR;
 use const OpenTracing\Tags\HTTP_STATUS_CODE;
 use const OpenTracing\Tags\HTTP_URL;
 use const OpenTracing\Tags\SPAN_KIND;
@@ -49,18 +50,24 @@ class RequestTracingAspect extends OrderAspect
     protected function aroundHttpRequest(MethodInvocation $invocation)
     {
         $spanStack = SpanStack::get();
-        $clientData = getDeepContextValueByClassName(ClientData::class);
-        $traceContext = $spanStack->buildContext($clientData->getRequest()->getHeaders());
-        $span = $spanStack->startSpan($clientData->getRequest()->getMethod() . "  " . $clientData->getPath(), $traceContext);
-        $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
-        $span->setTag(HTTP_URL, $clientData->getRequest()->getUri()->__toString());
-        $span->setTag(HTTP_METHOD, $clientData->getRequest()->getMethod());
-        $span->setTag(COMPONENT, "ESD Server");
-        defer(function () use ($span, $clientData, $spanStack) {
-            $span->setTag(HTTP_STATUS_CODE, $clientData->getResponse()->getStatusCode());
-            $spanStack->pop();
-        });
-        $invocation->proceed();
+        if($spanStack!=null) {
+            $clientData = getDeepContextValueByClassName(ClientData::class);
+            $traceContext = $spanStack->buildContext($clientData->getRequest()->getHeaders());
+            $span = $spanStack->startSpan($clientData->getRequest()->getMethod() . "  " . $clientData->getPath(), $traceContext);
+            $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
+            $span->setTag(HTTP_URL, $clientData->getRequest()->getUri()->__toString());
+            $span->setTag(HTTP_METHOD, $clientData->getRequest()->getMethod());
+            $span->setTag(COMPONENT, "ESD Server");
+            defer(function () use ($span, $clientData, $spanStack) {
+                $e = getContextValue("lastException");
+                if ($e != null) {
+                    $span->setTag(ERROR, $e->getMessage());
+                }
+                $span->setTag(HTTP_STATUS_CODE, $clientData->getResponse()->getStatusCode());
+                $spanStack->pop();
+            });
+        }
+        return $invocation->proceed();
     }
 
     /**

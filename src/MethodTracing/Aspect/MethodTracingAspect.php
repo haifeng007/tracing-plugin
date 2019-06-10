@@ -13,6 +13,7 @@ use ESD\Plugins\Aop\OrderAspect;
 use ESD\Plugins\Tracing\SpanStack;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
+use const OpenTracing\Tags\ERROR;
 use const OpenTracing\Tags\SPAN_KIND;
 use const OpenTracing\Tags\SPAN_KIND_RPC_SERVER;
 
@@ -41,15 +42,26 @@ class MethodTracingAspect extends OrderAspect
      */
     protected function aroundMethodExecute(MethodInvocation $invocation)
     {
-        $name = $invocation->getMethod()->name;
         $spanStack = SpanStack::get();
-        $span = $spanStack->startSpan($invocation->getMethod()->getDeclaringClass()->getShortName() . "::$name");
-        defer(function () use ($span) {
-            $span->finish();
-        });
-        $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
-        $result = $invocation->proceed();
-        $spanStack->pop();
+        if($spanStack!=null) {
+            $name = $invocation->getMethod()->name;
+            $span = $spanStack->startSpan($invocation->getMethod()->getDeclaringClass()->getShortName() . "::$name");
+            defer(function () use ($span) {
+                $span->finish();
+            });
+            $span->setTag(SPAN_KIND, SPAN_KIND_RPC_SERVER);
+            $result = null;
+            try {
+                $result = $invocation->proceed();
+            } catch (\Throwable $e) {
+                $span->setTag(ERROR, $e->getMessage());
+                throw $e;
+            } finally {
+                $spanStack->pop();
+            }
+        }else{
+            $result = $invocation->proceed();
+        }
         return $result;
     }
 }

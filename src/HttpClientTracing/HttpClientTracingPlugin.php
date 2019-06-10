@@ -72,7 +72,7 @@ class HttpClientTracingPlugin extends AbstractPlugin
      */
     public function getName(): string
     {
-        return "DBTracingPlugin";
+        return "HttpClientTracingPlugin";
     }
 
     /**

@@ -17,6 +17,9 @@ esd:
       port: 8082
       open_websocket_protocol: true
       sock_type: 1
-
+  logger:
+    level: info
+whoops:
+  enable: true
 tracing:
   host: my-jaeger-agent.jaeger-operator.svc.cluster.local
